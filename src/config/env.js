@@ -1,7 +1,12 @@
 import dotenv from 'dotenv'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
 import { z } from 'zod'
 
-dotenv.config()
+const currentFile = fileURLToPath(import.meta.url)
+const projectRoot = path.resolve(path.dirname(currentFile), '../..')
+
+dotenv.config({ path: path.join(projectRoot, '.env') })
 
 const boolean = z.string().optional().transform((value) => value === 'true')
 const optionalUrl = z.string().url().optional().or(z.literal(''))
