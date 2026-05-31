@@ -8,7 +8,7 @@ import { ApiError } from '../utils/ApiError.js'
 const placeholder = (source) => ({ message: `${source[0].toUpperCase()}${source.slice(1)} tenant status update not implemented yet`, source })
 
 export const listTenants = async (req, res) => {
-  const result = await aggregatorService.tenants(req.query)
+  const result = await aggregatorService.tenants(req.validatedQuery)
   res.json({ success: true, data: result.data, meta: { total: result.data.length, sources: result.sources } })
 }
 

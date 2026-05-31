@@ -5,7 +5,7 @@ import { normalizeSubscription } from '../utils/normalizeSubscription.js'
 import { ApiError } from '../utils/ApiError.js'
 
 export const listSubscriptions = async (req, res) => {
-  const result = await aggregatorService.subscriptions(req.query)
+  const result = await aggregatorService.subscriptions(req.validatedQuery)
   res.json({ success: true, data: result.data, meta: { total: result.data.length, sources: result.sources } })
 }
 

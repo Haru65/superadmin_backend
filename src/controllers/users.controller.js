@@ -5,7 +5,7 @@ import { normalizeUser } from '../utils/normalizeUser.js'
 import { ApiError } from '../utils/ApiError.js'
 
 export const listUsers = async (req, res) => {
-  const result = await aggregatorService.users(req.query)
+  const result = await aggregatorService.users(req.validatedQuery)
   res.json({ success: true, data: result.data, meta: { total: result.data.length, sources: result.sources } })
 }
 
