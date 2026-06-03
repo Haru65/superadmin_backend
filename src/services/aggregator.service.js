@@ -35,7 +35,10 @@ const settleSourceRequests = async (sourceRequests, meta, label) => {
   )
   return settled.flatMap((result, index) => {
     const [source] = sourceRequests[index]
-    if (result.status === 'fulfilled') return result.value
+    if (result.status === 'fulfilled') {
+      console.log(`[${label}] ${source} rows=${result.value.length}`)
+      return result.value
+    }
     const error = sourceError(result.reason)
     meta[source] = { success: false, error }
     console.error(`[${label}] ${source} source failed: ${error}`)
