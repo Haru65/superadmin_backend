@@ -71,6 +71,7 @@ export const aggregatorService = {
     const knownTenants = tenantsResult ?? await this.tenants()
     const meta = sourceMeta()
     const data = await settleSourceRequests([
+      ['cafe', cafeService.getUsers, (row, source) => normalizeUser(row, source, knownTenants.data)],
       ['restaurant', restaurantService.getUsers, (row, source) => normalizeUser(row, source, knownTenants.data)],
       ['lodging', lodgingService.getUsers, (row, source) => normalizeUser(row, source, knownTenants.data)],
     ], meta, 'USERS')

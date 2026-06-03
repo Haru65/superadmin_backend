@@ -93,11 +93,11 @@ All routes below are mounted by `superadmin-backend`. Except `/health`, `/auth/l
 | `PUT` | `/superadmin/tenants/:source/:id` | Update tenant | cafe only currently |
 | `PATCH` | `/superadmin/tenants/:source/:id/status` | Pause/resume tenant | cafe only currently |
 | `DELETE` | `/superadmin/tenants/:source/:id` | Delete tenant | cafe or restaurant |
-| `GET` | `/superadmin/users` | Aggregated users | restaurant users, lodging users |
-| `POST` | `/superadmin/users` | Create user | restaurant only currently |
-| `PATCH` | `/superadmin/users/:source/:id` | Update user | restaurant only currently |
-| `DELETE` | `/superadmin/users/:source/:id` | Delete user | restaurant only currently |
-| `POST` | `/superadmin/users/:source/:id/reset-password` | Reset user password | restaurant only currently |
+| `GET` | `/superadmin/users` | Aggregated users | cafe users, restaurant users, lodging users |
+| `POST` | `/superadmin/users` | Create user | cafe or restaurant |
+| `PATCH` | `/superadmin/users/:source/:id` | Update user | cafe or restaurant |
+| `DELETE` | `/superadmin/users/:source/:id` | Delete user | cafe or restaurant |
+| `POST` | `/superadmin/users/:source/:id/reset-password` | Reset user password | cafe or restaurant |
 | `GET` | `/superadmin/orders` | Aggregated orders | restaurant orders, lodging bookings |
 | `GET` | `/superadmin/revenue` | Aggregated revenue summary | orders aggregation |
 | `GET` | `/superadmin/analytics` | Aggregated analytics | dashboard aggregation |
@@ -123,6 +123,11 @@ Cafe source lives in `dineflow_backend`.
 | `PATCH` | `/admin/superadmin/tenants/:id/pause` | `PATCH /superadmin/tenants/cafe/:id/status` | Pause cafe tenant |
 | `PATCH` | `/admin/superadmin/tenants/:id/resume` | `PATCH /superadmin/tenants/cafe/:id/status` | Resume cafe tenant |
 | `GET` | `/admin/superadmin/dashboard/metrics` | Cafe service helper | Source metrics |
+| `GET` | `/superadmin/users` | `GET /superadmin/users` | Lists cafe users |
+| `POST` | `/superadmin/users` | `POST /superadmin/users` | Create cafe user |
+| `PATCH` | `/superadmin/users/:id` | `PATCH /superadmin/users/cafe/:id` | Update cafe user |
+| `DELETE` | `/superadmin/users/:id` | `DELETE /superadmin/users/cafe/:id` | Delete cafe user |
+| `POST` | `/superadmin/users/:id/reset-password` | Reset cafe user password | Sends `password` |
 | `GET` | `/admin/superadmin/tenants/:tenantId/payment-config` | Payment config read | Cafe payment config |
 | `POST` | `/admin/superadmin/tenants/:tenantId/payment-config` | Payment config save | Cafe payment config |
 | `POST` | `/admin/superadmin/tenants/:tenantId/payment-config/validate` | Payment config validate | Cafe payment validation |
@@ -412,10 +417,9 @@ PATCH /superadmin/subscriptions/restaurant/8
 
 ## Current Implementation Notes
 
-- Cafe tenant and payment configuration write operations are implemented.
+- Cafe tenant, user, and payment configuration write operations are implemented.
 - Restaurant user, subscription, and delete-tenant operations are implemented.
 - Restaurant tenant creation/update through `superadmin-backend` is not implemented yet.
 - Restaurant payment configuration through `superadmin-backend` is not implemented yet.
 - Lodging currently returns safe empty fallback data unless `LODGING_API_URL` is configured.
 - `/debug/source-health` is a temporary diagnostic route and should be removed or protected after deployment verification.
-
