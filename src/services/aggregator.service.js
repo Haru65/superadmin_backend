@@ -86,6 +86,7 @@ export const aggregatorService = {
     const knownTenants = tenantsResult ?? await this.tenants()
     const meta = sourceMeta()
     const data = await settleSourceRequests([
+      ['cafe', cafeService.getOrders, (row, source) => normalizeOrder(row, source, knownTenants.data)],
       ['restaurant', restaurantService.getOrders, (row, source) => normalizeOrder(row, source, knownTenants.data)],
       ['lodging', lodgingService.getOrders, (row, source) => normalizeOrder(row, source, knownTenants.data)],
     ], meta, 'ORDERS')
@@ -102,6 +103,7 @@ export const aggregatorService = {
     const knownTenants = tenantsResult ?? await this.tenants()
     const meta = sourceMeta()
     const data = await settleSourceRequests([
+      ['cafe', cafeService.getSubscriptions, (row, source) => normalizeSubscription(row, source, knownTenants.data)],
       ['restaurant', restaurantService.getSubscriptions, (row, source) => normalizeSubscription(row, source, knownTenants.data)],
       ['lodging', lodgingService.getSubscriptions, (row, source) => normalizeSubscription(row, source, knownTenants.data)],
     ], meta, 'SUBSCRIPTIONS')

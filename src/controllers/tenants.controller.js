@@ -5,7 +5,10 @@ import { logAudit } from '../services/audit.service.js'
 import { normalizeTenant } from '../utils/normalizeTenant.js'
 import { ApiError } from '../utils/ApiError.js'
 
-const placeholder = (source) => ({ message: `${source[0].toUpperCase()}${source.slice(1)} tenant status update not implemented yet`, source })
+const tenantSources = {
+  cafe: cafeService,
+  restaurant: restaurantService,
+}
 
 export const listTenants = async (req, res) => {
   const result = await aggregatorService.tenants(req.validatedQuery)
@@ -15,6 +18,7 @@ export const listTenants = async (req, res) => {
 export const getTenant = async (req, res) => {
   const { source, id } = req.params
   if (source === 'cafe') return res.json({ success: true, data: normalizeTenant(await cafeService.getTenant(id), source) })
+  if (source === 'restaurant') return res.json({ success: true, data: normalizeTenant(await restaurantService.getTenant(id), source) })
   const result = await aggregatorService.tenants()
   const tenant = result.data.find((item) => item.source === source && item.sourceId === id)
   if (!tenant) throw new ApiError(404, 'Tenant not found')
@@ -23,16 +27,18 @@ export const getTenant = async (req, res) => {
 
 export const createTenant = async (req, res) => {
   const source = req.body.source || 'cafe'
-  if (source !== 'cafe') throw new ApiError(501, `${source} tenant creation not implemented yet`)
-  const tenant = normalizeTenant(await cafeService.createTenant(req.body), source)
+  const service = tenantSources[source]
+  if (!service) throw new ApiError(501, `${source} tenant creation not implemented yet`)
+  const tenant = normalizeTenant(await service.createTenant(req.body), source)
   await logAudit(req, { action: 'tenant.create', entityType: 'tenant', entityId: tenant.id, description: `Created ${source} tenant` })
   res.status(201).json({ success: true, data: tenant })
 }
 
 export const updateTenant = async (req, res) => {
   const { source, id } = req.params
-  if (source !== 'cafe') throw new ApiError(501, `${source} tenant update not implemented yet`)
-  const tenant = normalizeTenant(await cafeService.updateTenant(id, req.body), source)
+  const service = tenantSources[source]
+  if (!service) throw new ApiError(501, `${source} tenant update not implemented yet`)
+  const tenant = normalizeTenant(await service.updateTenant(id, req.body), source)
   await logAudit(req, { action: 'tenant.update', entityType: 'tenant', entityId: tenant.id, description: `Updated ${source} tenant` })
   res.json({ success: true, data: tenant })
 }
@@ -40,10 +46,12 @@ export const updateTenant = async (req, res) => {
 export const setTenantStatus = async (req, res) => {
   const { source, id } = req.params
   const { status } = req.body
-  if (source !== 'cafe') return res.json({ success: true, data: placeholder(source) })
-  const result = status === 'active' ? await cafeService.resumeTenant(id) : await cafeService.pauseTenant(id)
+  if (source === 'lodging') throw new ApiError(501, 'Lodging tenant status update not implemented yet')
+  const result = source === 'cafe'
+    ? status === 'active' ? await cafeService.resumeTenant(id) : await cafeService.pauseTenant(id)
+    : await restaurantService.setTenantStatus(id, status)
   await logAudit(req, { action: `tenant.${status}`, entityType: 'tenant', entityId: `${source}:${id}`, description: `Changed tenant status to ${status}` })
-  res.json({ success: true, data: result })
+  res.json({ success: true, data: normalizeTenant(result, source) })
 }
 
 export const deleteTenant = async (req, res) => {

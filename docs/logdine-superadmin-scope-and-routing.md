@@ -87,21 +87,21 @@ All routes below are mounted by `superadmin-backend`. Except `/health`, `/auth/l
 | `POST` | `/auth/login` | Login platform SuperAdmin | SuperAdmin DB |
 | `GET` | `/auth/me` | Current SuperAdmin user | SuperAdmin DB |
 | `GET` | `/superadmin/dashboard` | Aggregated dashboard metrics | tenants, users, orders, subscriptions |
-| `GET` | `/superadmin/tenants` | Aggregated tenants/businesses | cafe tenants, restaurant restaurants, lodging hotels |
-| `GET` | `/superadmin/tenants/:source/:id` | One normalized tenant | cafe tenant detail or aggregate lookup |
-| `POST` | `/superadmin/tenants` | Create tenant | cafe only currently |
-| `PUT` | `/superadmin/tenants/:source/:id` | Update tenant | cafe only currently |
-| `PATCH` | `/superadmin/tenants/:source/:id/status` | Pause/resume tenant | cafe only currently |
+| `GET` | `/superadmin/tenants` | Aggregated tenants/businesses | cafe tenants, restaurant tenants, lodging hotels |
+| `GET` | `/superadmin/tenants/:source/:id` | One normalized tenant | cafe or restaurant tenant detail, or aggregate lookup |
+| `POST` | `/superadmin/tenants` | Create tenant | cafe or restaurant currently |
+| `PUT` | `/superadmin/tenants/:source/:id` | Update tenant | cafe or restaurant currently |
+| `PATCH` | `/superadmin/tenants/:source/:id/status` | Pause/resume tenant | cafe or restaurant currently |
 | `DELETE` | `/superadmin/tenants/:source/:id` | Delete tenant | cafe or restaurant |
 | `GET` | `/superadmin/users` | Aggregated users | cafe users, restaurant users, lodging users |
 | `POST` | `/superadmin/users` | Create user | cafe or restaurant |
 | `PATCH` | `/superadmin/users/:source/:id` | Update user | cafe or restaurant |
 | `DELETE` | `/superadmin/users/:source/:id` | Delete user | cafe or restaurant |
 | `POST` | `/superadmin/users/:source/:id/reset-password` | Reset user password | cafe or restaurant |
-| `GET` | `/superadmin/orders` | Aggregated orders | restaurant orders, lodging bookings |
+| `GET` | `/superadmin/orders` | Aggregated orders | cafe orders, restaurant orders, lodging bookings |
 | `GET` | `/superadmin/revenue` | Aggregated revenue summary | orders aggregation |
 | `GET` | `/superadmin/analytics` | Aggregated analytics | dashboard aggregation |
-| `GET` | `/superadmin/subscriptions` | Aggregated subscriptions | restaurant subscriptions, lodging subscriptions |
+| `GET` | `/superadmin/subscriptions` | Aggregated subscriptions | cafe subscriptions, restaurant subscriptions, lodging subscriptions |
 | `PATCH` | `/superadmin/subscriptions/:source/:id` | Update subscription | restaurant only currently |
 | `GET` | `/superadmin/tenants/:source/:tenantId/payment-config` | Payment config | cafe only currently |
 | `POST` | `/superadmin/tenants/:source/:tenantId/payment-config` | Save payment config | cafe only currently |
@@ -169,14 +169,18 @@ Restaurant source lives in `restaurant-api`.
 
 | Method | Restaurant route | Used by SuperAdmin route | Notes |
 | --- | --- | --- | --- |
-| `GET` | `/superadmin/restaurants` | `GET /superadmin/tenants`, `/debug/source-health` | Lists restaurant businesses |
-| `DELETE` | `/superadmin/restaurants/:id` | `DELETE /superadmin/tenants/restaurant/:id` | Delete restaurant |
+| `GET` | `/superadmin/tenants` | `GET /superadmin/tenants`, `/debug/source-health` | Lists restaurant businesses |
+| `GET` | `/superadmin/tenants/:id` | `GET /superadmin/tenants/restaurant/:id` | Restaurant tenant details |
+| `POST` | `/superadmin/tenants` | `POST /superadmin/tenants` | Create restaurant tenant |
+| `PUT` | `/superadmin/tenants/:id` | `PUT /superadmin/tenants/restaurant/:id` | Update restaurant tenant |
+| `PATCH` | `/superadmin/tenants/:id/status` | `PATCH /superadmin/tenants/restaurant/:id/status` | Pause/resume restaurant tenant |
+| `DELETE` | `/superadmin/tenants/:id` | `DELETE /superadmin/tenants/restaurant/:id` | Delete restaurant |
 | `GET` | `/superadmin/users` | `GET /superadmin/users` | Restaurant users |
 | `POST` | `/superadmin/users` | `POST /superadmin/users` | Create restaurant user |
 | `PATCH` | `/superadmin/users/:id` | `PATCH /superadmin/users/restaurant/:id` | Update restaurant user |
 | `DELETE` | `/superadmin/users/:id` | `DELETE /superadmin/users/restaurant/:id` | Delete restaurant user |
 | `POST` | `/superadmin/users/:id/reset-password` | Reset restaurant user password | Sends `temporaryPassword` |
-| `GET` | `/orders` | `GET /superadmin/orders`, revenue, dashboard | Restaurant orders |
+| `GET` | `/superadmin/orders` | `GET /superadmin/orders`, revenue, dashboard | Restaurant orders |
 | `GET` | `/superadmin/subscriptions` | `GET /superadmin/subscriptions` | Restaurant subscriptions |
 | `PATCH` | `/superadmin/subscriptions/:id` | `PATCH /superadmin/subscriptions/restaurant/:id` | Update restaurant subscription |
 | `GET` | `/superadmin/analytics` | Restaurant service helper | Restaurant analytics |
@@ -208,7 +212,7 @@ POST   /superadmin/tenants/:tenantId/payment-config
 POST   /superadmin/tenants/:tenantId/payment-config/validate
 ```
 
-At the moment, `superadmin-backend` still uses `/superadmin/restaurants` for restaurant tenant listing.
+At the moment, `superadmin-backend` uses the newer `/superadmin/tenants` restaurant contract for tenant listing, details, creation, updates, status changes, and deletion.
 
 ## Source Failure Behavior
 
@@ -417,9 +421,9 @@ PATCH /superadmin/subscriptions/restaurant/8
 
 ## Current Implementation Notes
 
-- Cafe tenant, user, and payment configuration write operations are implemented.
+- Cafe tenant, user, order, subscription, and payment configuration operations are implemented where the cafe source exposes them.
 - Restaurant user, subscription, and delete-tenant operations are implemented.
-- Restaurant tenant creation/update through `superadmin-backend` is not implemented yet.
+- Restaurant tenant creation/update/status operations through `superadmin-backend` are implemented.
 - Restaurant payment configuration through `superadmin-backend` is not implemented yet.
 - Lodging currently returns safe empty fallback data unless `LODGING_API_URL` is configured.
 - `/debug/source-health` is a temporary diagnostic route and should be removed or protected after deployment verification.

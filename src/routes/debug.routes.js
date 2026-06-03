@@ -28,8 +28,8 @@ router.get('/source-health', asyncHandler(async (req, res) => {
     }],
     ['restaurant', {
       url: env.RESTAURANT_API_URL,
-      endpointKey: 'restaurantsEndpoint',
-      endpoint: '/superadmin/restaurants',
+      endpointKey: 'tenantsEndpoint',
+      endpoint: '/superadmin/tenants',
       check: restaurantService.health,
     }],
   ]

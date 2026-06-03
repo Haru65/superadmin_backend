@@ -14,10 +14,14 @@ const api = createSourceClient(env.RESTAURANT_API_URL, {
 })
 
 export const restaurantService = {
-  getTenants: () => api.get('/superadmin/restaurants'),
-  health: () => api.probe('/superadmin/restaurants'),
-  deleteTenant: (id) => api.delete(`/superadmin/restaurants/${id}`),
-  getOrders: () => api.get('/orders'),
+  getTenants: () => api.get('/superadmin/tenants'),
+  health: () => api.probe('/superadmin/tenants'),
+  getTenant: (id) => api.get(`/superadmin/tenants/${id}`),
+  createTenant: (body) => api.post('/superadmin/tenants', body),
+  updateTenant: (id, body) => api.put(`/superadmin/tenants/${id}`, body),
+  setTenantStatus: (id, status) => api.patch(`/superadmin/tenants/${id}/status`, { status }),
+  deleteTenant: (id) => api.delete(`/superadmin/tenants/${id}`),
+  getOrders: () => api.get('/superadmin/orders'),
   getAnalytics: () => api.get('/superadmin/analytics'),
   getUsers: () => api.get('/superadmin/users'),
   createUser: (body) => api.post('/superadmin/users', body),
