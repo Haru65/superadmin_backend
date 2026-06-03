@@ -29,6 +29,19 @@ const capture = async (source, request, meta, normalize) => {
     return []
   }
 }
+const settleSourceRequests = async (sourceRequests, meta, label) => {
+  const settled = await Promise.allSettled(
+    sourceRequests.map(([source, request, normalize]) => captureRows(source, request, normalize))
+  )
+  return settled.flatMap((result, index) => {
+    const [source] = sourceRequests[index]
+    if (result.status === 'fulfilled') return result.value
+    const error = sourceError(result.reason)
+    meta[source] = { success: false, error }
+    console.error(`[${label}] ${source} source failed: ${error}`)
+    return []
+  })
+}
 const filterText = (items, search, keys) => !search ? items : items.filter((item) => keys.some((key) => String(item[key] ?? '').toLowerCase().includes(String(search).toLowerCase())))
 const filterType = (items, type) => type ? items.filter((item) => item.type === type || item.tenantType === type) : items
 const monthKey = (value) => String(value || '').slice(0, 7)
@@ -42,21 +55,11 @@ export const aggregatorService = {
     console.log(`[TENANTS] RESTAURANT_API_URL=${env.RESTAURANT_API_URL}`)
     const meta = sourceMeta()
     const sourceRequests = [
-      ['cafe', cafeService.getTenants],
-      ['restaurant', restaurantService.getTenants],
-      ['lodging', lodgingService.getTenants],
+      ['cafe', cafeService.getTenants, normalizeTenant],
+      ['restaurant', restaurantService.getTenants, normalizeTenant],
+      ['lodging', lodgingService.getTenants, normalizeTenant],
     ]
-    const settled = await Promise.allSettled(
-      sourceRequests.map(([source, request]) => captureRows(source, request, normalizeTenant))
-    )
-    const data = settled.flatMap((result, index) => {
-      const [source] = sourceRequests[index]
-      if (result.status === 'fulfilled') return result.value
-      const error = sourceError(result.reason)
-      meta[source] = { success: false, error }
-      console.error(`[TENANTS] ${source} source failed: ${error}`)
-      return []
-    })
+    const data = await settleSourceRequests(sourceRequests, meta, 'TENANTS')
     return {
       data: filterText(filterType(data, filters.type), filters.search, ['name', 'slug', 'ownerEmail', 'phone'])
         .filter((tenant) => !filters.status || tenant.status === filters.status),
@@ -67,11 +70,10 @@ export const aggregatorService = {
   async users(filters = {}, tenantsResult) {
     const knownTenants = tenantsResult ?? await this.tenants()
     const meta = sourceMeta()
-    const data = (await Promise.all([
-      Promise.resolve([]),
-      capture('restaurant', restaurantService.getUsers, meta, (row, source) => normalizeUser(row, source, knownTenants.data)),
-      capture('lodging', lodgingService.getUsers, meta, (row, source) => normalizeUser(row, source, knownTenants.data)),
-    ])).flat()
+    const data = await settleSourceRequests([
+      ['restaurant', restaurantService.getUsers, (row, source) => normalizeUser(row, source, knownTenants.data)],
+      ['lodging', lodgingService.getUsers, (row, source) => normalizeUser(row, source, knownTenants.data)],
+    ], meta, 'USERS')
     return {
       data: filterText(filterType(data, filters.type), filters.search, ['name', 'email', 'tenantName'])
         .filter((user) => !filters.role || user.role === filters.role),
@@ -82,11 +84,10 @@ export const aggregatorService = {
   async orders(filters = {}, tenantsResult) {
     const knownTenants = tenantsResult ?? await this.tenants()
     const meta = sourceMeta()
-    const data = (await Promise.all([
-      Promise.resolve([]),
-      capture('restaurant', restaurantService.getOrders, meta, (row, source) => normalizeOrder(row, source, knownTenants.data)),
-      capture('lodging', lodgingService.getOrders, meta, (row, source) => normalizeOrder(row, source, knownTenants.data)),
-    ])).flat()
+    const data = await settleSourceRequests([
+      ['restaurant', restaurantService.getOrders, (row, source) => normalizeOrder(row, source, knownTenants.data)],
+      ['lodging', lodgingService.getOrders, (row, source) => normalizeOrder(row, source, knownTenants.data)],
+    ], meta, 'ORDERS')
     return {
       data: filterType(data, filters.type)
         .filter((order) => !filters.paymentStatus || order.paymentStatus === filters.paymentStatus)
@@ -99,11 +100,10 @@ export const aggregatorService = {
   async subscriptions(filters = {}, tenantsResult) {
     const knownTenants = tenantsResult ?? await this.tenants()
     const meta = sourceMeta()
-    const data = (await Promise.all([
-      Promise.resolve([]),
-      capture('restaurant', restaurantService.getSubscriptions, meta, (row, source) => normalizeSubscription(row, source, knownTenants.data)),
-      capture('lodging', lodgingService.getSubscriptions, meta, (row, source) => normalizeSubscription(row, source, knownTenants.data)),
-    ])).flat()
+    const data = await settleSourceRequests([
+      ['restaurant', restaurantService.getSubscriptions, (row, source) => normalizeSubscription(row, source, knownTenants.data)],
+      ['lodging', lodgingService.getSubscriptions, (row, source) => normalizeSubscription(row, source, knownTenants.data)],
+    ], meta, 'SUBSCRIPTIONS')
     return {
       data: filterType(data, filters.type).filter((subscription) => !filters.status || subscription.status === filters.status),
       sources: mergeSources(knownTenants.sources, meta),
