@@ -8,6 +8,7 @@ import { errorHandler, notFound } from './middleware/errorHandler.js'
 import { ApiError } from './utils/ApiError.js'
 import authRoutes from './routes/auth.routes.js'
 import dashboardRoutes from './routes/dashboard.routes.js'
+import debugRoutes from './routes/debug.routes.js'
 import healthRoutes from './routes/health.routes.js'
 import ordersRoutes from './routes/orders.routes.js'
 import paymentsRoutes from './routes/payments.routes.js'
@@ -32,7 +33,9 @@ app.use(express.json({ limit: '1mb' }))
 app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'))
 
 app.use(healthRoutes)
+// TODO: Remove this temporary diagnostics route after deployment verification.
 app.use('/auth', authRoutes)
+app.use('/debug', debugRoutes)
 app.use('/superadmin', requireAuth, dashboardRoutes, tenantsRoutes, usersRoutes, ordersRoutes, revenueRoutes, subscriptionsRoutes, paymentsRoutes, settingsRoutes)
 
 app.use(notFound)

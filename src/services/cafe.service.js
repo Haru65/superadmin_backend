@@ -1,10 +1,21 @@
 import { env } from '../config/env.js'
 import { createSourceClient } from './source-http.service.js'
 
-const api = createSourceClient(env.CAFE_API_URL, env.CAFE_API_TOKEN)
+const api = createSourceClient(env.CAFE_API_URL, {
+  name: 'cafe',
+  token: env.CAFE_API_TOKEN,
+  internalToken: env.LOGDINE_INTERNAL_API_TOKEN,
+  auth: {
+    path: '/auth/login',
+    email: env.CAFE_API_EMAIL,
+    password: env.CAFE_API_PASSWORD,
+    body: (email, password) => ({ email, password }),
+  },
+})
 
 export const cafeService = {
   getTenants: () => api.get('/admin/superadmin/tenants'),
+  health: () => api.probe('/admin/superadmin/tenants'),
   getTenant: (id) => api.get(`/admin/superadmin/tenants/${id}`),
   createTenant: (body) => api.post('/admin/superadmin/tenants', body),
   updateTenant: (id, body) => api.put(`/admin/superadmin/tenants/${id}`, body),

@@ -9,16 +9,18 @@ const tenantStatus = (value) => {
 const slugify = (value) => String(value || 'unnamed-business').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 export const normalizeTenant = (row = {}, source) => {
+  row = row && typeof row === 'object' ? row : {}
   const sourceId = String(row.sourceId ?? row.id ?? row.tenant_id ?? row.restaurant_id ?? '')
   const name = String(row.name ?? row.restaurant_name ?? 'Unnamed Business')
   const subscription = row.subscription || {}
   const payment = row.payment || {}
+  const slug = String(row.slug ?? slugify(name !== 'Unnamed Business' ? name : sourceId || name))
   return {
     id: sourceKey(source, sourceId),
     sourceId,
     source,
     name,
-    slug: String(row.slug ?? slugify(name)),
+    slug,
     type: source,
     status: tenantStatus(row.status ?? (row.is_active === false || row.is_active === 0 ? 'inactive' : 'active')),
     logoUrl: row.logoUrl ?? row.logo_url ?? row.logo ?? null,

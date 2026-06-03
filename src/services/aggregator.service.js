@@ -2,6 +2,7 @@ import { cafeService } from './cafe.service.js'
 import { lodgingService } from './lodging.service.js'
 import { restaurantService } from './restaurant.service.js'
 import { sourceError } from './source-http.service.js'
+import { env } from '../config/env.js'
 import { normalizeOrder } from '../utils/normalizeOrder.js'
 import { normalizeSubscription } from '../utils/normalizeSubscription.js'
 import { normalizeTenant } from '../utils/normalizeTenant.js'
@@ -19,9 +20,10 @@ const mergeSources = (...items) => Object.fromEntries(sources.map((source) => {
   const failed = items.map((item) => item?.[source]).find((item) => item && !item.success)
   return [source, failed ?? { success: true, error: null }]
 }))
+const captureRows = async (source, request, normalize) => rows(await request()).map((row) => normalize(row, source))
 const capture = async (source, request, meta, normalize) => {
   try {
-    return rows(await request()).map((row) => normalize(row, source))
+    return captureRows(source, request, normalize)
   } catch (error) {
     meta[source] = { success: false, error: sourceError(error) }
     return []
@@ -35,12 +37,26 @@ const breakdown = (values, key = 'type') => [...new Set(values)].map((value) => 
 
 export const aggregatorService = {
   async tenants(filters = {}) {
+    console.log('[TENANTS] /superadmin/tenants called')
+    console.log(`[TENANTS] CAFE_API_URL=${env.CAFE_API_URL}`)
+    console.log(`[TENANTS] RESTAURANT_API_URL=${env.RESTAURANT_API_URL}`)
     const meta = sourceMeta()
-    const data = (await Promise.all([
-      capture('cafe', cafeService.getTenants, meta, normalizeTenant),
-      capture('restaurant', restaurantService.getTenants, meta, normalizeTenant),
-      capture('lodging', lodgingService.getTenants, meta, normalizeTenant),
-    ])).flat()
+    const sourceRequests = [
+      ['cafe', cafeService.getTenants],
+      ['restaurant', restaurantService.getTenants],
+      ['lodging', lodgingService.getTenants],
+    ]
+    const settled = await Promise.allSettled(
+      sourceRequests.map(([source, request]) => captureRows(source, request, normalizeTenant))
+    )
+    const data = settled.flatMap((result, index) => {
+      const [source] = sourceRequests[index]
+      if (result.status === 'fulfilled') return result.value
+      const error = sourceError(result.reason)
+      meta[source] = { success: false, error }
+      console.error(`[TENANTS] ${source} source failed: ${error}`)
+      return []
+    })
     return {
       data: filterText(filterType(data, filters.type), filters.search, ['name', 'slug', 'ownerEmail', 'phone'])
         .filter((tenant) => !filters.status || tenant.status === filters.status),

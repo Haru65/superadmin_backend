@@ -1,10 +1,21 @@
 import { env } from '../config/env.js'
 import { createSourceClient } from './source-http.service.js'
 
-const api = createSourceClient(env.RESTAURANT_API_URL, env.RESTAURANT_API_TOKEN)
+const api = createSourceClient(env.RESTAURANT_API_URL, {
+  name: 'restaurant',
+  token: env.RESTAURANT_API_TOKEN,
+  internalToken: env.LOGDINE_INTERNAL_API_TOKEN,
+  auth: {
+    path: '/auth/login',
+    email: env.RESTAURANT_API_EMAIL,
+    password: env.RESTAURANT_API_PASSWORD,
+    body: (email, password) => ({ email, password, role: 'superadmin' }),
+  },
+})
 
 export const restaurantService = {
   getTenants: () => api.get('/superadmin/restaurants'),
+  health: () => api.probe('/superadmin/restaurants'),
   deleteTenant: (id) => api.delete(`/superadmin/restaurants/${id}`),
   getOrders: () => api.get('/orders'),
   getAnalytics: () => api.get('/superadmin/analytics'),
