@@ -2,6 +2,7 @@ import { cafeService } from '../services/cafe.service.js'
 import { restaurantService } from '../services/restaurant.service.js'
 import { aggregatorService } from '../services/aggregator.service.js'
 import { logAudit } from '../services/audit.service.js'
+import { getLogoDataUrl, parseLogoDataUrl, saveTenantLogo, withLogoAliases } from '../services/tenantLogo.service.js'
 import { normalizeTenant } from '../utils/normalizeTenant.js'
 import { ApiError } from '../utils/ApiError.js'
 
@@ -29,9 +30,12 @@ export const createTenant = async (req, res) => {
   const source = req.body.source || 'cafe'
   const service = tenantSources[source]
   if (!service) throw new ApiError(501, `${source} tenant creation not implemented yet`)
-  const tenant = normalizeTenant(await service.createTenant(req.body), source)
+  const logoDataUrl = getLogoDataUrl(req.body)
+  parseLogoDataUrl(logoDataUrl)
+  const tenant = normalizeTenant(await service.createTenant(withLogoAliases(req.body, logoDataUrl)), source)
+  const logo = await saveTenantLogo({ tenant, logoDataUrl, userId: req.user?.id })
   await logAudit(req, { action: 'tenant.create', entityType: 'tenant', entityId: tenant.id, description: `Created ${source} tenant` })
-  res.status(201).json({ success: true, data: tenant })
+  res.status(201).json({ success: true, data: tenant, meta: { logo } })
 }
 
 export const updateTenant = async (req, res) => {
