@@ -6,7 +6,7 @@ import { z } from 'zod'
 const currentFile = fileURLToPath(import.meta.url)
 const projectRoot = path.resolve(path.dirname(currentFile), '../..')
 
-dotenv.config({ path: path.join(projectRoot, '.env') })
+dotenv.config({ path: path.join(projectRoot, '.env'), quiet: true })
 
 const boolean = z.string().optional().transform((value) => value === 'true')
 const optionalUrl = z.string().url().optional().or(z.literal(''))

@@ -11,11 +11,14 @@ const params = z.object({
 })
 const paymentBody = z.object({
   provider: z.enum(['paytm', 'razorpay', 'upi', 'none']).optional(),
+  accountId: z.string().optional(),
+  accountLabel: z.string().optional(),
   keyId: z.string().optional(),
   keySecret: z.string().optional(),
   webhookSecret: z.string().optional(),
-  website: z.string().url().optional().or(z.literal('')),
+  website: z.string().optional(),
   isActive: z.boolean().optional(),
+  isDefault: z.boolean().optional(),
 }).passthrough()
 
 router.get('/tenants/:source/:tenantId/payment-config', validateRequest(params, 'params'), asyncHandler(getPaymentConfig))

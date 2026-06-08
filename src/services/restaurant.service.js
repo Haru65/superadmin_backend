@@ -30,4 +30,7 @@ export const restaurantService = {
   deleteUser: (id) => api.delete(`/superadmin/users/${id}`),
   getSubscriptions: () => api.get('/superadmin/subscriptions'),
   updateSubscription: (id, body) => api.patch(`/superadmin/subscriptions/${id}`, body),
+  getPaymentConfig: (tenantId) => api.get(`/superadmin/tenants/${tenantId}/payment-config`),
+  savePaymentConfig: (tenantId, body) => api.post(`/superadmin/tenants/${tenantId}/payment-config`, body),
+  validatePaymentConfig: (tenantId, body) => api.post(`/superadmin/tenants/${tenantId}/payment-config/validate`, body),
 }
