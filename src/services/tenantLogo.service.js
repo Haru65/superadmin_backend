@@ -5,6 +5,7 @@ const MAX_LOGO_BYTES = 5 * 1024 * 1024
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 export const getLogoDataUrl = (body = {}) => body.logo ?? body.logoUrl ?? body.logo_url ?? null
+export const hasLogoField = (body = {}) => ['logo', 'logoUrl', 'logo_url'].some((key) => Object.prototype.hasOwnProperty.call(body, key))
 
 export const withLogoAliases = (body = {}, logoDataUrl = getLogoDataUrl(body)) => {
   if (!logoDataUrl) return body
@@ -60,4 +61,15 @@ export const saveTenantLogo = async ({ tenant, logoDataUrl, userId }) => {
     ],
   )
   return rows[0]
+}
+
+export const getStoredTenantLogoDataUrl = async ({ source, sourceId }) => {
+  const { rows } = await query(
+    `SELECT logo_data_url AS "logoDataUrl"
+     FROM tenant_logos
+     WHERE source = $1 AND source_id = $2
+     LIMIT 1`,
+    [source, sourceId],
+  )
+  return rows[0]?.logoDataUrl || null
 }

@@ -2,7 +2,7 @@ import { cafeService } from '../services/cafe.service.js'
 import { restaurantService } from '../services/restaurant.service.js'
 import { aggregatorService } from '../services/aggregator.service.js'
 import { logAudit } from '../services/audit.service.js'
-import { getLogoDataUrl, parseLogoDataUrl, saveTenantLogo, withLogoAliases } from '../services/tenantLogo.service.js'
+import { getLogoDataUrl, getStoredTenantLogoDataUrl, hasLogoField, parseLogoDataUrl, saveTenantLogo, withLogoAliases } from '../services/tenantLogo.service.js'
 import { normalizeTenant } from '../utils/normalizeTenant.js'
 import { ApiError } from '../utils/ApiError.js'
 
@@ -42,9 +42,14 @@ export const updateTenant = async (req, res) => {
   const { source, id } = req.params
   const service = tenantSources[source]
   if (!service) throw new ApiError(501, `${source} tenant update not implemented yet`)
-  const tenant = normalizeTenant(await service.updateTenant(id, req.body), source)
+  const logoWasProvided = hasLogoField(req.body)
+  const logoDataUrl = getLogoDataUrl(req.body)
+  parseLogoDataUrl(logoDataUrl)
+  const forwardedLogo = logoDataUrl || (!logoWasProvided ? await getStoredTenantLogoDataUrl({ source, sourceId: id }) : null)
+  const tenant = normalizeTenant(await service.updateTenant(id, withLogoAliases(req.body, forwardedLogo)), source)
+  const logo = logoWasProvided ? await saveTenantLogo({ tenant, logoDataUrl, userId: req.user?.id }) : null
   await logAudit(req, { action: 'tenant.update', entityType: 'tenant', entityId: tenant.id, description: `Updated ${source} tenant` })
-  res.json({ success: true, data: tenant })
+  res.json({ success: true, data: tenant, meta: { logo } })
 }
 
 export const setTenantStatus = async (req, res) => {
