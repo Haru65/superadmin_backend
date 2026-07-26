@@ -3,10 +3,22 @@ export const normalizeOrder = (row = {}, source, tenants = []) => {
   const rawTenantId = String(row.tenantId ?? row.tenant_id ?? row.restaurant_id ?? '')
   const tenant = tenants.find((item) => item.source === source && item.sourceId === rawTenantId)
   const rawPayment = String(row.paymentStatus ?? row.payment_status ?? 'pending').toLowerCase()
-  const paymentStatus = rawPayment === 'completed' ? 'paid' : ['paid', 'unpaid', 'pending', 'failed'].includes(rawPayment) ? rawPayment : 'pending'
+  const paymentStatus = ['paid', 'completed', 'complete', 'success', 'successful', 'captured', 'authorized', 'txn_success'].includes(rawPayment)
+    ? 'paid'
+    : ['unpaid', 'pending', 'created', 'initiated', 'draft'].includes(rawPayment)
+      ? 'unpaid'
+      : ['failed', 'failure', 'cancelled', 'canceled', 'txn_failure'].includes(rawPayment)
+        ? 'failed'
+        : 'pending'
   const rawType = String(row.orderType ?? row.order_type ?? row.source_type ?? (source === 'lodging' ? 'room-booking' : 'dine-in')).toLowerCase()
   const rawMethod = String(row.paymentMethod ?? row.payment_method ?? row.payment_provider ?? 'unknown').toLowerCase()
-  const paymentMethod = ['cash', 'card', 'upi', 'online'].includes(rawMethod) ? rawMethod : 'unknown'
+  const paymentMethod = ['paytm', 'gpay', 'googlepay', 'phonepe', 'bhim'].includes(rawMethod)
+    ? 'upi'
+    : ['razorpay'].includes(rawMethod)
+      ? 'online'
+      : ['cash', 'card', 'upi', 'online'].includes(rawMethod)
+        ? rawMethod
+        : 'unknown'
   const normalizedType = rawType === 'take-away' ? 'takeaway' : rawType
   const orderType = ['dine-in', 'takeaway', 'delivery', 'room-booking', 'food-order', 'service-request'].includes(normalizedType) ? normalizedType : source === 'lodging' ? 'room-booking' : 'dine-in'
   return {
